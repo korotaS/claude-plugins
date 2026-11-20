@@ -1,0 +1,15 @@
+{
+  "name": "personal",
+  "description": "Personal Claude Code plugins.",
+  "owner": {
+    "name": "korotaS"
+  },
+  "plugins": [
+    {
+      "name": "autonomous-pr",
+      "source": "./plugins/autonomous-pr",
+      "description": "Take one feature or fix from a request to a reviewed, CI-tested, signed PR: questions, approved plan, autonomous coding, local CI replication (Cython too), Opus review loop, Docker integration tests, PR draft. Manual only: /autonomous-pr.",
+      "version": "0.1.0"
+    }
+  ]
+}
