@@ -12,11 +12,11 @@ The marketplace is this repo, https://github.com/korotaS/claude-plugins. On ever
 
 ```bash
 claude plugin marketplace add korotaS/claude-plugins
-claude plugin install autonomous-pr@personal
+claude plugin install autonomous-pr@korotas
 ```
 
 Or from inside a session: `/plugin marketplace add korotaS/claude-plugins`,
-then `/plugin install autonomous-pr@personal`.
+then `/plugin install autonomous-pr@korotas`.
 
 Invoke it as `/autonomous-pr:autonomous-pr <what to build>`. Plugin skills are
 namespaced, so typing `/autonomous-pr` in the slash menu finds it.
@@ -26,8 +26,8 @@ Update everywhere after a change here: bump `version` in
 `.claude-plugin/marketplace.json`, push, then on each machine:
 
 ```bash
-claude plugin marketplace update personal
-claude plugin update autonomous-pr@personal
+claude plugin marketplace update korotas
+claude plugin update autonomous-pr@korotas
 ```
 
 ### Where each surface reads skills from
@@ -44,9 +44,9 @@ Cloud sessions, per repo (`.claude/settings.json`, committed):
 ```json
 {
   "extraKnownMarketplaces": {
-    "personal": {"source": {"source": "github", "repo": "korotaS/claude-plugins"}}
+    "korotas": {"source": {"source": "github", "repo": "korotaS/claude-plugins"}}
   },
-  "enabledPlugins": {"autonomous-pr@personal": true}
+  "enabledPlugins": {"autonomous-pr@korotas": true}
 }
 ```
 
