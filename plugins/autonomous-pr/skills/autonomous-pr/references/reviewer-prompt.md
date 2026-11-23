@@ -17,7 +17,9 @@ linters are fine.
 **What it is meant to do:** read `<RUN>/plan.md`. The plan was approved by
 the user; review the code against it, not the plan itself, unless the plan
 contains a real flaw.
-**Project rules:** `<list of CLAUDE.md / AGENTS.md / CONTRIBUTING files>` and
+**Project rules:** `<RUN>/repo-rules.md` (the repo's docs, AI-agent docs,
+style and code-style rules, commit and PR conventions, each with its source;
+open the sources when a rule matters) and
 `<skill dir>/references/karpathy-guidelines.md`.
 **CI recipe:** `<RUN>/ci-recipe.md`.
 
@@ -39,10 +41,13 @@ Look for, in this order:
    sync), other Python or OS versions in the matrix?
 4. **Security and data.** Injection, secrets, unsafe deserialisation,
    permissions, migrations that lose data.
-5. **Scope and simplicity.** Lines that do not trace to the request,
+5. **Repo rules.** Anything that breaks `repo-rules.md`: written style and
+   code-style rules, naming and patterns that differ from the surrounding
+   code, rules from the AI-agent docs, docs that describe the changed
+   behaviour but were not updated, commit messages off the convention.
+6. **Scope and simplicity.** Lines that do not trace to the request,
    speculative abstraction or configurability, refactors of adjacent code,
-   style that differs from the surrounding code, orphans this change left
-   behind.
+   orphans this change left behind.
 
 Report each finding as:
 

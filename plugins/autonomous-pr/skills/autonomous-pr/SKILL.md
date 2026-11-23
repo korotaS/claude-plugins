@@ -1,6 +1,6 @@
 ---
 name: autonomous-pr
-description: Take one feature, fix or other change from a one-line request to a pushed, ready-to-review pull request in any git repo. Asks clarifying questions and the branch and task slug, writes a plan with tests for approval, then codes on its own, runs the repo's CI steps locally (Cython builds included), runs an Opus reviewer loop of at most four rounds, tests in Docker with local service containers, and drafts the PR. Every commit is signed. Push and PR actions wait for approval. Invoked only by name, as /autonomous-pr <what to build>.
+description: Take one feature, fix or other change from a one-line request to a pushed, ready-to-review pull request in any git repo, following the repo's docs, AI-agent docs, branch, commit and PR conventions and code style. Asks clarifying questions and the branch and task slug, writes a plan with tests for approval, then codes on its own, runs the repo's CI steps locally (Cython builds included), runs an Opus reviewer loop of at most four rounds, tests in Docker with local service containers, and drafts the PR. Every commit is signed. Push and PR actions wait for approval. Invoked only by name, as /autonomous-pr <what to build>.
 disable-model-invocation: true
 argument-hint: "<feature, fix or change to make>"
 ---
@@ -19,9 +19,10 @@ The request is: `$ARGUMENTS`. If that is empty, ask what to build and stop.
 
 Read `references/karpathy-guidelines.md` now and follow it for the whole run:
 think before coding, simplicity first, surgical changes, goal-driven
-execution. The repo's own `CLAUDE.md`, `AGENTS.md`, `CONTRIBUTING*` and
-similar files are project-specific instructions; merge them in, and where they
-are stricter, they win.
+execution. The repo's own rules (its docs, its instructions for AI agents,
+its branch, commit and PR conventions, its code style) are project-specific
+instructions. Phase 1 collects them; merge them in, and where they are
+stricter, they win.
 
 Keep a run directory outside the working tree, so nothing you write by
 accident ends up in a commit:
@@ -54,11 +55,16 @@ Answer from the code whatever the code can answer, so the user only gets the
 questions that need them.
 
 1. **Repo state.** Current branch, `git status`, default branch
-   (`git symbolic-ref refs/remotes/origin/HEAD` or `gh repo view --json defaultBranchRef`),
-   the remote, and the naming style of recent branches and commit messages
-   (`git log --oneline -20`, `git branch -r | head -30`). If the tree is
-   dirty, do not touch it; ask in phase 2 what to do with those changes.
-2. **Project instructions.** The files named under "How to work".
+   (`git symbolic-ref refs/remotes/origin/HEAD` or `gh repo view --json defaultBranchRef`)
+   and the remote. If the tree is dirty, do not touch it; ask in phase 2
+   what to do with those changes.
+2. **Repo rules.** Read `references/repo-rules.md` and follow it: the docs
+   and the AI-agent docs (`CLAUDE.md`, `AGENTS.md`, `.cursor/rules/` and the
+   like, nested ones included), the branch names and PR titles and bodies
+   in the repo's history, PR templates, commit conventions, and every
+   style and code-style rule, written or visible in the code. Save what
+   applies to this change as `$RUN/repo-rules.md` once `$RUN` exists. Its
+   unclear or conflicting items go into phase 2.
 3. **The CI recipe.** Read the CI config and write down, job by job, what CI
    runs and how you will run the same thing here. Read
    `references/ci-replication.md` for where CI configs live and the details
@@ -82,8 +88,9 @@ questions that need them.
 Ask everything that is ambiguous or unclear in one round, together with:
 
 - the **branch name** and the **task slug** (offer a default for each from
-  the repo's conventions, e.g. `fix/<slug>` if that is what recent branches
-  look like, with the slug a few lowercase words joined by hyphens),
+  the branch-name rule or pattern you found, e.g. `fix/<slug>` if that is
+  what recent branches look like, or `ABC-123-<slug>` if they carry ticket
+  ids, with the slug a few lowercase words joined by hyphens),
 - the **base branch**, if it is not obviously the default branch,
 - what to do with a dirty working tree, and signing, if phase 1 flagged
   either.
@@ -108,7 +115,8 @@ Write `$RUN/plan.md` and show it to the user in full. Use this structure:
 ## Goal and success criteria      (observable; how we will know it works)
 ## Assumptions and decisions       (each answer from phase 2, and anything else you assumed)
 ## Out of scope                    (what you will deliberately not touch)
-## Changes                         (files and what changes in each, smallest version that does the job)
+## Changes                         (files and what changes in each, smallest version that does the job; docs to update included)
+## Repo rules that apply           (from $RUN/repo-rules.md: style, naming, docs, commit and PR format, each with its source)
 ## Steps
 1. <step> → verify: <check>
 ## Tests
@@ -128,6 +136,9 @@ diff, and ask again. **Write no code before the plan is approved.**
    `git switch -c <branch> origin/<base>`.
 2. Work through the plan's steps. For new behaviour and for bug fixes, write
    the test first and watch it fail for the right reason, then make it pass.
+   Follow `$RUN/repo-rules.md` as you write: the written style rules and the
+   conventions of the code around it. Update the docs it lists for this
+   change in the same commits as the code.
 3. Stay inside the plan. Notice something else that is broken? Write it down
    for the PR's notes; do not fix it. If the plan turns out to be wrong (an
    assumption fails, the change needs to be much bigger, a decision only the
@@ -202,9 +213,12 @@ If Docker is not available, say so. That is "not verified", not "passed".
 
 ## Phase 8 — PR draft, then push on approval
 
-1. **Title** in the repo's style (`gh pr list --state merged -L 15`).
-2. **Description.** Use the repo's PR template if it has one
-   (`.github/pull_request_template.md` and the like). Otherwise:
+1. **Title** in the format the PR section of `$RUN/repo-rules.md` records
+   (and that a PR-title lint in CI, if any, enforces).
+2. **Description.** Follow the PR section of `$RUN/repo-rules.md`: the
+   template's sections if there is one, the body structure of recent merged
+   PRs, labels, issue linking, and a changelog entry if the repo wants one.
+   Where the repo has no convention for a part, use:
    - **What and why**: the change in two or three sentences, with links to
      the Notion page or issue it came from.
    - **Changes**: per file or area, what changed.
@@ -235,8 +249,10 @@ If Docker is not available, say so. That is "not verified", not "passed".
   `gpg.ssh.allowedSignersFile`, git cannot verify signatures locally; the
   script then only confirms a signature is present, and the `--github` check
   after the push is the real verification.
-- The message follows the repo's convention (from `git log`), says what and
-  why, and ends with any attribution lines your environment requires.
+- The message follows the commit convention in `$RUN/repo-rules.md`
+  (commitlint, `CONTRIBUTING*`, or the pattern in `git log`), adds a DCO
+  sign-off (`-s`) if the repo requires one, says what and why, and ends with
+  any attribution lines your environment requires.
 - Stage files by name, not `git add -A`, and look at `git diff --cached`
   before committing. A stray log, build artifact or secret is easy to commit
   and annoying to remove once pushed.
