@@ -1,5 +1,5 @@
 {
   "name": "autonomous-pr",
-  "version": "0.2.0",
-  "description": "Take one feature or fix from a request to a reviewed, CI-tested, signed PR: the repo's docs, AI-agent docs and conventions, questions, approved plan, autonomous coding, local CI replication (Cython too), Opus review loop, Docker integration tests, PR draft. Manual only: /autonomous-pr."
+  "version": "0.3.0",
+  "description": "Take one feature or fix from a request to a reviewed, CI-tested, signed PR: the repo's docs, AI-agent docs and conventions, questions, approved plan, autonomous coding, local CI replication (Cython too), Opus code-review and security-review loop, Docker integration tests, PR draft. Manual only: /autonomous-pr."
 }

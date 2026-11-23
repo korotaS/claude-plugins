@@ -1,6 +1,6 @@
 ---
 name: autonomous-pr
-description: Take one feature, fix or other change from a one-line request to a pushed, ready-to-review pull request in any git repo, following the repo's docs, AI-agent docs, branch, commit and PR conventions and code style. Asks clarifying questions and the branch and task slug, writes a plan with tests for approval, then codes on its own, runs the repo's CI steps locally (Cython builds included), runs an Opus reviewer loop of at most four rounds, tests in Docker with local service containers, and drafts the PR. Every commit is signed. Push and PR actions wait for approval. Invoked only by name, as /autonomous-pr <what to build>.
+description: Take one feature, fix or other change from a one-line request to a pushed, ready-to-review pull request in any git repo, following the repo's docs, AI-agent docs, branch, commit and PR conventions and code style. Asks clarifying questions and the branch and task slug, writes a plan with tests for approval, then codes on its own, runs the repo's CI steps locally (Cython builds included), runs a review loop of at most four rounds with two Opus reviewers each round (the code-review and security-review skills), tests in Docker with local service containers, and drafts the PR. Every commit is signed. Push and PR actions wait for approval. Invoked only by name, as /autonomous-pr <what to build>.
 disable-model-invocation: true
 argument-hint: "<feature, fix or change to make>"
 ---
@@ -167,24 +167,36 @@ Then commit (see "Commits"). This is commit 1.
 
 ## Phase 6 — Review loop (at most 4 rounds)
 
-A reviewer that did not write the code catches what you cannot. Each round:
+Reviewers that did not write the code catch what you cannot. Each round has
+two, one for the code and one for security. Each round:
 
-1. **Review.** Spawn a fresh subagent with `model: "opus"` (Opus 5.5) and
-   `effort: "high"`. Build its prompt from `references/reviewer-prompt.md`.
-   Give it a fresh context every round, so it reads the code instead of
-   your earlier conclusions. It reviews; it never edits.
-2. **Judge each finding yourself.** Reviewers are sometimes wrong. Check
-   every finding against the code and decide: *fix*, *decline* (with the
-   reason, e.g. "out of scope per plan", "not reachable because ..."), or
-   *note for the PR*. Keep the record in `$RUN/review-<n>.md`.
+1. **Review.** In one message, spawn two fresh subagents, each with
+   `subagent_type: "general-purpose"`, `model: "opus"` (Opus 5.5) and
+   `effort: "high"`:
+   - the **code reviewer**, which runs the `code-review` skill on the branch
+     and then checks the plan, tests, CI parity, repo rules and scope;
+   - the **security reviewer**, which runs the `security-review` skill on
+     the branch and then checks secrets, dependencies, CI and container
+     changes, and injection-type flaws.
+
+   Build both prompts from `references/reviewer-prompt.md`. Spawn new ones
+   every round, so they read the code instead of your earlier conclusions.
+   They review; they never edit, and they post nothing. Wait for both
+   before you judge. If one says its skill was not available and it
+   reviewed from the checklist only, record that for the PR.
+2. **Judge each finding yourself.** Reviewers are sometimes wrong. Merge the
+   two lists, drop duplicates, check every finding against the code, and
+   decide: *fix*, *decline* (with the reason, e.g. "out of scope per plan",
+   "not reachable because ..."), or *note for the PR*. Keep the record in
+   `$RUN/review-<n>.md`, with which reviewer raised each finding.
 3. **Fix** what you accepted, rerun the affected local checks (everything,
    if the fix was not trivial), and commit: one signed commit per fix round.
-4. **Stop** when a round finds nothing at blocker or important severity that
-   you accept, or after round 4. If round 4 needed fixes, those fixes go
-   unreviewed; say so in the PR description.
+4. **Stop** when neither reviewer finds anything at blocker or important
+   severity that you accept, or after round 4. If round 4 needed fixes,
+   those fixes go unreviewed; say so in the PR description.
 
-Hand the next round's reviewer your declined findings and the reasons, so it
-does not raise them again unless it brings new evidence.
+Hand each of the next round's reviewers its own declined findings and the
+reasons, so it does not raise them again unless it brings new evidence.
 
 ## Phase 7 — Docker and integration tests
 
@@ -225,8 +237,9 @@ If Docker is not available, say so. That is "not verified", not "passed".
    - **How it was tested**: every check you ran, local, Docker and
      integration, each with its result. Do not round anything up: list
      skipped, flaky and not-verified checks as such.
-   - **Review**: how many rounds, what was fixed, what was declined and why,
-     and whether the last fixes went unreviewed.
+   - **Review**: how many rounds, what the code and the security reviewer
+     each found, what was fixed, what was declined and why, and whether the
+     last fixes went unreviewed.
    - **Notes**: pre-existing failures, unrelated problems you noticed, follow-ups.
 3. Save it as `$RUN/pr.md` and show the title, the description and
    `git log --oneline origin/<base>..HEAD`. Ask whether to push and open the
